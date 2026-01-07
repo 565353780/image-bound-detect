@@ -204,6 +204,7 @@ def extract_polygons(img, threshold=None):
 def main():
     image_file_path = "/Users/chli/Downloads/mayi/img/10309_train_stage2_512_init_map_315_robot_2_rotate.png"
     save_image_file_path = "/Users/chli/Downloads/mayi/test_bound.png"
+    epsilon = 2.0  # 拟合精度参数（可根据需要调整）
 
     img = cv2.imread(image_file_path)
     if len(img.shape) == 3:
@@ -239,8 +240,20 @@ def main():
             dist = np.sqrt((first[0] - last[0])**2 + (first[1] - last[1])**2)
             if dist < 2:  # 如果首尾距离小于2像素，视为封闭
                 is_closed = True
-        
-        cv2.polylines(img, [pts], isClosed=is_closed, color=color, thickness=1)
+
+        # 用opencv拟合多边形
+        approx = cv2.approxPolyDP(pts, epsilon, is_closed)
+        approx_pts = approx.reshape(-1, 2)
+
+        # 绘制原始多边形（边界轮廓），用浅灰色
+        cv2.polylines(img, [pts], isClosed=is_closed, color=(200, 200, 200), thickness=1)
+
+        # 绘制拟合后的多边形，用随机颜色（表示拟合结果）
+        cv2.polylines(img, [approx_pts], isClosed=is_closed, color=color, thickness=2)
+
+        # 可视化拟合点
+        for x, y in approx_pts:
+            cv2.circle(img, (int(x), int(y)), radius=3, color=(0, 0, 255), thickness=-1)
 
     cv2.imwrite(save_image_file_path, img)
     print(f"结果已保存到: {save_image_file_path}")
